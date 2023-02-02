@@ -1,0 +1,94 @@
+---
+title: "Project_2"
+author: "Alina Becker"
+date: "2023-02-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library(ggplot2)
+library(gauseR)
+library(vegan)
+library(mapsFinland)
+library(palmerpenguins)
+
+data(package = "palmerpenguins")
+```
+Problem 1:
+```{r}
+penguins_lm<-lm(body_mass_g ~ flipper_length_mm, data=penguins)
+summary(penguins_lm)
+
+plot(penguins$flipper_length_mm, penguins$body_mass_g, xlab="Flipper length (mm)",
+     ylab="Body mass(g)",pch=15:17, col=factor(penguins$species))
+abline(penguins_lm)
+
+pred_mass<-data.frame(flipper_length_mm=c(190, 215,230))
+predict(penguins_lm, newdata = pred_mass )
+#legend("topleft", legend, pch = 15:17, col=factor(penguins$species))
+```
+For the parameters b (y-intercept) and m (slope), the model estimates the values -5780.831 (b) and 49.686 (m).
+The predicted values for the body weight of penguins with the flipper length of 190 mm is 3659.426 g, for 215 mm 4901.565 g and for the flipper length of 230 mm the predicted body weight is 5646.849 g.
+
+Problem 2:
+```{r}
+data(gause_1934_book_f22)
+dat <- gause_1934_book_f22[gause_1934_book_f22$Treatment == "Pa",
+]
+
+plot(dat$Day, dat$Volume_Species2, pch=16, xlab="Time (Days)", ylab="Volume (µL)",
+     main="Paramecium aurelia")
+model.nls<-nls(Volume_Species2 ~ SSlogis(Day, r, k, n), data=dat)
+summary(model.nls)
+```
+For the growth rate (r) the model estimates the value 222.3642. The carrying capacity K has a value of 7.2503 and the value of N(m) is 1.4135.
+
+```{r}
+time <- as.data.frame(seq(2, 25, by = 1))
+colnames(time) <- "Day"
+pred <- predict(model.nls, time)
+plot(dat$Day, dat$Volume_Species2, xlab="Time (Days)", ylab="Volume (µL)",
+     main="Paramecium aurelia")
+lines(time$Day, pred, lwd = 3, col = "blue")
+```
+
+Problem 3:
+```{r}
+gause_wrap <- gauseR::gause_wrapper(time=dat$Day, species=dat$Volume_Species2)
+gause_wrap$parameter_intervals
+```
+The value for the growth rate (r) is 0.707457874. For the intraspecific competition coefficient a11 the value -0.003181534 was estimated.
+
+Problem 4:
+```{r}
+data("seutukunnat2019")
+ggplot(seutukunnat2019) + geom_sf() + ggtitle("Finland: Maps in R!")
+```
+```{r}
+data(sipoo, sipoo.map)
+S <- specnumber(sipoo)
+plot(S ~ area, sipoo.map, xlab = "Island Area (ha)", ylab = "Number of Bird Species",
+ylim = c(1, max(S)))
+
+fin.nls<-nls(S ~ SSarrhenius(area, k, z), data=sipoo.map)
+summary(fin.nls)
+
+finland <- as.data.frame(seq(0, 200, by = 0.1))
+colnames(finland) <- "area"
+pred.area <- predict(fin.nls, finland)
+plot(sipoo.map$area, S,  xlab = "Island Area (ha)", ylab = "Number of Bird Species")
+lines(finland$area, pred.area, lwd = 3, col = "blue")
+```
+The estimated value for k is 3.40619 and the value for the parameter z 0.43644.
